@@ -122,26 +122,26 @@ async def mock_line_provider():
     class MockLineProviderClient:
         @staticmethod
         async def get_all_events_data_from_line_provider(http_client):
-            events = {
-                "1": {
+            events = [
+                {
                     "event_id": "1",
                     "coefficient": 1.2,
                     "deadline": 1600,
                     "state": EventState.NEW.value,
                 },
-                "2": {
+                {
                     "event_id": "2",
                     "coefficient": 1.15,
                     "deadline": 1060,
                     "state": EventState.NEW.value,
                 },
-                "3": {
+                {
                     "event_id": "3",
                     "coefficient": 1.67,
                     "deadline": 1090,
                     "state": EventState.NEW.value,
                 },
-            }
+            ]
             return events
 
     with patch.object(

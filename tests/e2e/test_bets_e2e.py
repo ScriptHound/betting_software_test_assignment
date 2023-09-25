@@ -47,11 +47,13 @@ async def test_get_bets_history_view(
     bets_fixture,
 ):
     expected_json = [
-        {"id": 1, "event_id": "1", "amount": 100.0, "status": 1},
-        {"id": 2, "event_id": "2", "amount": 100.0, "status": 1},
-        {"id": 3, "event_id": "3", "amount": 100.0, "status": 1},
-        {"id": 4, "event_id": "4", "amount": 100.0, "status": 3},
+        {"id": bets_fixture[0].id, "event_id": bets_fixture[0].event_id, "amount": 100.0, "status": bets_fixture[0].status.value},
+        {"id": bets_fixture[1].id, "event_id": bets_fixture[1].event_id, "amount": 100.0, "status": bets_fixture[1].status.value},
+        {"id": bets_fixture[2].id, "event_id": bets_fixture[2].event_id, "amount": 100.0, "status": bets_fixture[2].status.value},
+        {"id": bets_fixture[3].id, "event_id": bets_fixture[3].event_id, "amount": 100.0, "status": 1},
+        {"id": 5, "event_id": "4", "amount": 100.0, "status": 3}
     ]
     response = await async_http_client.get("/bets/")
     jsonified_response = response.json()
+    jsonified_response.sort(key=lambda x: x['id'])
     assert jsonified_response == expected_json
