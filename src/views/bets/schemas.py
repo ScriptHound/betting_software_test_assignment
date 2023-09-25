@@ -1,13 +1,11 @@
 import decimal
 import enum
 from typing import Optional
-from pydantic import BaseModel, Field, RootModel
-
-
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 
 class FloatWithTwoDecimalPlaces(RootModel):
-    root: str = Field(pattern=r'^\d+\.\d{2}$')
+    root: str = Field(pattern=r"^\d+\.\d{2}$")
 
 
 class EventState(enum.Enum):
@@ -30,3 +28,23 @@ class EventsResponse(RootModel):
 class BetEntry(BaseModel):
     event_id: str
     amount: FloatWithTwoDecimalPlaces
+    bet_status: Optional[EventState] = None
+
+
+class BetStatus(enum.Enum):
+    NEW = 1
+    WIN = 2
+    LOSE = 3
+
+
+class BetModel(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    event_id: str
+    amount: float
+    status: BetStatus
+
+
+class BetsList(RootModel):
+    root: list[BetModel]

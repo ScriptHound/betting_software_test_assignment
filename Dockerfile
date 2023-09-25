@@ -1,11 +1,14 @@
-FROM python:3.9
+FROM python:3.9 as build_base
 
-COPY ./app /app
-
+COPY pyproject.toml /app/
+COPY README.md /app/
+COPY . /app/backend_api/
 RUN pip install --upgrade pip && \
     pip install poetry
 
-RUN poetry export --without-hashes --format=requirements.txt > requirements.txt
+FROM build_base as main_part
+WORKDIR /app
+RUN poetry export -f requirements.txt --output requirements.txt
 RUN python -m pip install -r requirements.txt
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+WORKDIR /app/backend_api/
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8090"]

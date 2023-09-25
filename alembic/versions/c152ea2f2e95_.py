@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'c152ea2f2e95'
+revision: str = "c152ea2f2e95"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -20,13 +20,15 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.create_table(
-        'bets',
-        sa.Column('id', sa.Integer(), nullable=False, autoincrement=True),
-        sa.Column('event_id', sa.String(), nullable=True),
-        sa.Column('amount', sa.Float(), nullable=True),
-        sa.Column('status', sa.Enum('NEW', 'WIN', 'LOSE', name='betstatus'), nullable=True),
+        "bets",
+        sa.Column("id", sa.Integer(), autoincrement=True, primary_key=True),
+        sa.Column("event_id", sa.String(), nullable=True),
+        sa.Column("amount", sa.Float(), nullable=True),
+        sa.Column(
+            "status", sa.Enum("NEW", "WIN", "LOSE", name="betstatus"), nullable=True
+        ),
     )
 
 
 def downgrade() -> None:
-    op.drop_table('bets')
+    op.drop_table("bets")

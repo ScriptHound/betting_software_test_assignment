@@ -1,5 +1,7 @@
 import os
 import asyncio
+from typing import Optional
+from unittest.mock import patch
 
 import pytest
 import httpx
@@ -9,6 +11,10 @@ from testcontainers.postgres import PostgresContainer
 
 from src.database.settings import Base
 from main import app
+from src.views.bets.schemas import EventState
+from tests.fixtures import *  # noqa
+import src.database.settings as database_session_mock_target
+import src.views.bets.logic as line_provider_mock_target
 
 
 @pytest.fixture
@@ -35,13 +41,10 @@ class PatchedPostgresContainer(PostgresContainer):
         return "localhost" if os.name == "nt" else super().get_container_host_ip()
 
 
-
 class AsyncTestDataAccessLayer:
     def __init__(self, container: "PatchedPostgresContainer"):
         self.connection_url = container.get_connection_url()
-        self.test_engine = create_async_engine(
-            self.connection_url, execution_options={"isolation_level": "REPEATABLE READ"}
-        )
+        self.test_engine = create_async_engine(self.connection_url)
         self.TestSession = sessionmaker(
             self.test_engine,
             class_=AsyncSession,  # type: ignore
@@ -79,3 +82,69 @@ async def async_testing_session(async_DAL_fixture: AsyncTestDataAccessLayer):
             await transaction.commit()
         finally:
             await transaction.rollback()
+
+
+@pytest.fixture(scope="session")
+async def get_testing_session_manager_class(async_DAL_fixture):
+    class SessionManagerTest:
+        def __init__(self, session: Optional[AsyncSession] = None):
+            self.session = session or async_DAL_fixture.TestSession()  # type: ignore
+            self.autoclose = session is None
+
+        async def __aenter__(self) -> AsyncSession:
+            self.session = async_DAL_fixture.TestSession()
+            return self.session
+
+        async def __aexit__(self, exc_type, exc, tb):
+            if exc_type is not None:
+                await self.session.rollback()
+            else:
+                await self.session.commit()
+
+            if self.autoclose:
+                await self.session.close()
+
+    return SessionManagerTest
+
+
+@pytest.fixture(scope="session")
+async def mock_database_session(get_testing_session_manager_class):
+    with patch.object(
+        database_session_mock_target,
+        "SessionManager",
+        get_testing_session_manager_class,
+    ):
+        yield
+
+
+@pytest.fixture(scope="session")
+async def mock_line_provider():
+    class MockLineProviderClient:
+        @staticmethod
+        async def get_all_events_data_from_line_provider(http_client):
+            events = {
+                "1": {
+                    "event_id": "1",
+                    "coefficient": 1.2,
+                    "deadline": 1600,
+                    "state": EventState.NEW.value,
+                },
+                "2": {
+                    "event_id": "2",
+                    "coefficient": 1.15,
+                    "deadline": 1060,
+                    "state": EventState.NEW.value,
+                },
+                "3": {
+                    "event_id": "3",
+                    "coefficient": 1.67,
+                    "deadline": 1090,
+                    "state": EventState.NEW.value,
+                },
+            }
+            return events
+
+    with patch.object(
+        line_provider_mock_target, "LineProviderClient", MockLineProviderClient
+    ):
+        yield

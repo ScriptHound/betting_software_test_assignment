@@ -3,11 +3,12 @@ services:
   backend:
     build: .
     ports:
-      - "8080:8080"
+      - "8090:8090"
     env_file:
       - .env
     depends_on:
       - bets_db
+      - bsw_test_line_provider
 
   bets_db:
     image: postgres:latest
@@ -17,6 +18,11 @@ services:
       - "5432:5432"
     volumes:
       - bets_db_data:/var/lib/postgresql/data
+  
+  bsw_test_line_provider:
+    build: https://github.com/ScriptHound/bsw-test-line-provider.git
+    ports:
+      - "8080:8080"
 
 volumes:
   bets_db_data:
